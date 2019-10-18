@@ -1,25 +1,55 @@
-use std::{alloc, mem, ops::{Deref, DerefMut, Drop}, default::Default, marker::PhantomData};
+use std::{
+    alloc,
+    default::Default,
+    marker::PhantomData,
+    mem::{self, MaybeUninit},
+    ops::{Deref, DerefMut, Drop},
+    ptr,
+};
 
 struct Trailer<T> {
-    //pub inner: Inner,
     pub ptr: *mut u8,
     pub size: usize,
     phantom: PhantomData<T>,
 }
 
-impl<T:Default> Trailer<T> {
+impl<T: Default> Trailer<T> {
     fn new(capacity: usize) -> Trailer<T> {
+        unsafe {
+            let mut trailer = Trailer::allocate(capacity);
+            let mut inner = trailer.ptr as *mut T;
+            let previous = mem::replace((&mut *(trailer.ptr as *mut T)), T::default());
+            mem::forget(previous);
+
+            trailer
+        }
+    }
+}
+
+impl<T: Copy> Trailer<T> {
+    fn from(t: T, capacity: usize) -> Trailer<T> {
+        unsafe {
+            let mut trailer = Trailer::allocate(capacity);
+            let mut inner = trailer.ptr as *mut T;
+            *inner = t;
+
+            trailer
+        }
+    }
+}
+
+impl<T> Trailer<T> {
+    unsafe fn allocate(capacity: usize) -> Trailer<T> {
         let size = ::std::mem::size_of::<T>() + capacity;
         let align = mem::align_of::<u8>();
         let layout = alloc::Layout::from_size_align(size, align).unwrap();
         let ptr = unsafe { alloc::alloc(layout) };
 
-        unsafe {
-            let mut inner = ptr as *mut T;
-            *inner = T::default();
+        Trailer {
+            ptr,
+            size,
+            phantom: PhantomData,
         }
-
-        Trailer { ptr, size, phantom: PhantomData }
     }
 
     fn bytes(&self) -> &[u8] {
