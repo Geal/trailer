@@ -2,9 +2,9 @@ use std::{
     alloc,
     default::Default,
     marker::PhantomData,
-    mem::{self, MaybeUninit},
+    mem,
     ops::{Deref, DerefMut, Drop},
-    ptr,
+    ptr, slice,
 };
 
 pub struct Trailer<T> {
@@ -16,9 +16,8 @@ pub struct Trailer<T> {
 impl<T: Default> Trailer<T> {
     pub fn new(capacity: usize) -> Trailer<T> {
         unsafe {
-            let mut trailer = Trailer::allocate(capacity);
-            let mut inner = trailer.ptr as *mut T;
-            let previous = mem::replace((&mut *(trailer.ptr as *mut T)), T::default());
+            let trailer = Trailer::allocate(capacity);
+            let previous = mem::replace(&mut *(trailer.ptr as *mut T), T::default());
             mem::forget(previous);
 
             trailer
@@ -29,8 +28,8 @@ impl<T: Default> Trailer<T> {
 impl<T: Copy> Trailer<T> {
     pub fn from(t: T, capacity: usize) -> Trailer<T> {
         unsafe {
-            let mut trailer = Trailer::allocate(capacity);
-            let mut inner = trailer.ptr as *mut T;
+            let trailer = Trailer::allocate(capacity);
+            let inner = trailer.ptr as *mut T;
             *inner = t;
 
             trailer
@@ -40,10 +39,10 @@ impl<T: Copy> Trailer<T> {
 
 impl<T> Trailer<T> {
     unsafe fn allocate(capacity: usize) -> Trailer<T> {
-        let size = ::std::mem::size_of::<T>() + capacity;
+        let size = mem::size_of::<T>() + capacity;
         let align = mem::align_of::<u8>();
         let layout = alloc::Layout::from_size_align(size, align).unwrap();
-        let ptr = unsafe { alloc::alloc(layout) };
+        let ptr = alloc::alloc_zeroed(layout);
 
         Trailer {
             ptr,
@@ -54,9 +53,9 @@ impl<T> Trailer<T> {
 
     pub fn bytes(&self) -> &[u8] {
         unsafe {
-            ::std::slice::from_raw_parts(
-                self.ptr.offset(::std::mem::size_of::<T>() as isize),
-                self.size - ::std::mem::size_of::<T>(),
+            slice::from_raw_parts(
+                self.ptr.offset(mem::size_of::<T>() as isize),
+                self.size - mem::size_of::<T>(),
             )
         }
     }
@@ -64,8 +63,8 @@ impl<T> Trailer<T> {
     pub fn bytes_mut(&mut self) -> &mut [u8] {
         unsafe {
             ::std::slice::from_raw_parts_mut(
-                self.ptr.offset(::std::mem::size_of::<T>() as isize),
-                self.size - ::std::mem::size_of::<T>(),
+                self.ptr.offset(mem::size_of::<T>() as isize),
+                self.size - mem::size_of::<T>(),
             )
         }
     }
