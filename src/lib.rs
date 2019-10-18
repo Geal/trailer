@@ -54,7 +54,7 @@ impl<T> Trailer<T> {
     pub fn bytes(&self) -> &[u8] {
         unsafe {
             slice::from_raw_parts(
-                self.ptr.offset(mem::size_of::<T>() as isize),
+                self.ptr.add(mem::size_of::<T>()),
                 self.size - mem::size_of::<T>(),
             )
         }
@@ -63,7 +63,7 @@ impl<T> Trailer<T> {
     pub fn bytes_mut(&mut self) -> &mut [u8] {
         unsafe {
             ::std::slice::from_raw_parts_mut(
-                self.ptr.offset(mem::size_of::<T>() as isize),
+                self.ptr.add(mem::size_of::<T>()),
                 self.size - mem::size_of::<T>(),
             )
         }
