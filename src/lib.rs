@@ -91,6 +91,8 @@ mod tests {
         println!("raw bytes: {:?}", unsafe {
             ::std::slice::from_raw_parts(a.ptr, a.size)
         });
+        assert_eq!(::std::mem::size_of::<Data>(), 16);
+        assert_eq!(::std::mem::align_of::<Data>(), 8);
         panic!();
     }
 }
