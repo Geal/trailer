@@ -7,14 +7,14 @@ use std::{
     ptr,
 };
 
-struct Trailer<T> {
-    pub ptr: *mut u8,
-    pub size: usize,
+pub struct Trailer<T> {
+    ptr: *mut u8,
+    size: usize,
     phantom: PhantomData<T>,
 }
 
 impl<T: Default> Trailer<T> {
-    fn new(capacity: usize) -> Trailer<T> {
+    pub fn new(capacity: usize) -> Trailer<T> {
         unsafe {
             let mut trailer = Trailer::allocate(capacity);
             let mut inner = trailer.ptr as *mut T;
@@ -27,7 +27,7 @@ impl<T: Default> Trailer<T> {
 }
 
 impl<T: Copy> Trailer<T> {
-    fn from(t: T, capacity: usize) -> Trailer<T> {
+    pub fn from(t: T, capacity: usize) -> Trailer<T> {
         unsafe {
             let mut trailer = Trailer::allocate(capacity);
             let mut inner = trailer.ptr as *mut T;
@@ -52,7 +52,7 @@ impl<T> Trailer<T> {
         }
     }
 
-    fn bytes(&self) -> &[u8] {
+    pub fn bytes(&self) -> &[u8] {
         unsafe {
             ::std::slice::from_raw_parts(
                 self.ptr.offset(::std::mem::size_of::<T>() as isize),
@@ -61,7 +61,7 @@ impl<T> Trailer<T> {
         }
     }
 
-    fn bytes_mut(&mut self) -> &mut [u8] {
+    pub fn bytes_mut(&mut self) -> &mut [u8] {
         unsafe {
             ::std::slice::from_raw_parts_mut(
                 self.ptr.offset(::std::mem::size_of::<T>() as isize),
