@@ -126,13 +126,12 @@ mod tests {
 
             println!("Inner: {:?}", *a);
             println!("bytes: {:?}", a.bytes());
-            println!("raw bytes: {:?}", unsafe {
-                ::std::slice::from_raw_parts(a.ptr, a.size)
-            });
+            let raw = unsafe { ::std::slice::from_raw_parts(a.ptr, a.size) };
+            println!("raw bytes: {:?}", raw);
+            assert_eq!(&raw[..20], &vec![57u8, 48, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4][..]);
         }
         assert_eq!(::std::mem::size_of::<Data>(), 16);
         assert_eq!(::std::mem::align_of::<Data>(), 8);
-        panic!();
     }
 
     #[test]
@@ -162,11 +161,11 @@ mod tests {
 
         println!("Inner: {:?}", *a);
         println!("bytes: {:?}", a.bytes());
-        println!("raw bytes: {:?}", unsafe {
-            ::std::slice::from_raw_parts(a.ptr, a.size)
-        });
+        let raw = unsafe { ::std::slice::from_raw_parts(a.ptr, a.size) };
+        println!("raw bytes: {:?}", raw);
+        assert_eq!(&raw[..20], &vec![46u8, 22, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4][..]);
+
         assert_eq!(::std::mem::size_of::<Data>(), 16);
         assert_eq!(::std::mem::align_of::<Data>(), 8);
-        panic!();
     }
 }
