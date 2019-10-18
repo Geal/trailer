@@ -73,7 +73,7 @@ impl<T> Trailer<T> {
 
 impl<T> Drop for Trailer<T> {
     fn drop(&mut self) {
-        //(&mut *(self.ptr as *mut T)).drop();
+        unsafe { ptr::drop_in_place(self.ptr as *mut T) };
         let align = mem::align_of::<u8>();
         let layout = alloc::Layout::from_size_align(self.size, align).unwrap();
         unsafe { alloc::dealloc(self.ptr, layout) };
@@ -95,21 +95,66 @@ impl<T> DerefMut for Trailer<T> {
 
 #[cfg(test)]
 mod tests {
-  use super::*;
-
-  #[derive(Debug, Default)]
-  struct Inner {
-    field1: usize,
-    field2: bool,
-  }
-
-  type Data = Trailer<Inner>;
+    use super::*;
 
     #[test]
-    fn trailer() {
-        let mut a = Data::new(100);
-        a.field1 = 12345;
-        a.field2 = true;
+    fn default() {
+        #[derive(Debug, Default)]
+        struct Inner {
+            field1: usize,
+            field2: bool,
+        }
+
+        impl Drop for Inner {
+            fn drop(&mut self) {
+                println!("dropping Inner instance");
+            }
+        }
+
+        type Data = Trailer<Inner>;
+        // wrapper to test that the Inner instance is dropped
+        {
+            println!("will create");
+            let mut a = Data::new(100);
+            println!("created");
+            a.field1 = 12345;
+            a.field2 = true;
+
+            a.bytes_mut()[0] = 1;
+            a.bytes_mut()[1] = 2;
+            a.bytes_mut()[2] = 3;
+            a.bytes_mut()[3] = 4;
+
+            println!("Inner: {:?}", *a);
+            println!("bytes: {:?}", a.bytes());
+            println!("raw bytes: {:?}", unsafe {
+                ::std::slice::from_raw_parts(a.ptr, a.size)
+            });
+        }
+        assert_eq!(::std::mem::size_of::<Data>(), 16);
+        assert_eq!(::std::mem::align_of::<Data>(), 8);
+        panic!();
+    }
+
+    #[test]
+    fn copy() {
+        #[derive(Debug, Clone, Copy)]
+        struct Inner {
+            field1: usize,
+            field2: bool,
+        }
+
+        type Data = Trailer<Inner>;
+
+        let inner = Inner {
+            field1: 5678,
+            field2: true,
+        };
+        println!("will create");
+        let mut a = Data::from(inner, 100);
+        println!("created");
+        //a.field1 = 12345;
+        //a.field2 = true;
 
         a.bytes_mut()[0] = 1;
         a.bytes_mut()[1] = 2;
