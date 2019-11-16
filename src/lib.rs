@@ -17,9 +17,8 @@ impl<T: Default> Trailer<T> {
     pub fn new(capacity: usize) -> Trailer<T> {
         unsafe {
             let trailer = Trailer::allocate(capacity);
-            let previous = mem::replace(&mut *(trailer.ptr as *mut T), T::default());
-            mem::forget(previous);
-
+            let ptr = trailer.ptr as *mut T;
+            ptr.write(T::default());
             trailer
         }
     }
@@ -29,8 +28,8 @@ impl<T: Copy> Trailer<T> {
     pub fn from(t: T, capacity: usize) -> Trailer<T> {
         unsafe {
             let trailer = Trailer::allocate(capacity);
-            let inner = trailer.ptr as *mut T;
-            *inner = t;
+            let ptr = trailer.ptr as *mut T;
+            ptr.write(t);
 
             trailer
         }
@@ -40,7 +39,7 @@ impl<T: Copy> Trailer<T> {
 impl<T> Trailer<T> {
     unsafe fn allocate(capacity: usize) -> Trailer<T> {
         let size = mem::size_of::<T>() + capacity;
-        let align = mem::align_of::<u8>();
+        let align = mem::align_of::<T>();
         let layout = alloc::Layout::from_size_align(size, align).unwrap();
         let ptr = alloc::alloc_zeroed(layout);
 
@@ -73,7 +72,7 @@ impl<T> Trailer<T> {
 impl<T> Drop for Trailer<T> {
     fn drop(&mut self) {
         unsafe { ptr::drop_in_place(self.ptr as *mut T) };
-        let align = mem::align_of::<u8>();
+        let align = mem::align_of::<T>();
         let layout = alloc::Layout::from_size_align(self.size, align).unwrap();
         unsafe { alloc::dealloc(self.ptr, layout) };
     }
