@@ -1,6 +1,6 @@
 [package]
 name = "trailer"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Geoffroy Couprie <contact@geoffroycouprie.com>"]
 edition = "2018"
 description = "Store a type with an associated buffer in contiguous memory"
