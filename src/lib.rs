@@ -7,6 +7,7 @@ use std::{
     ptr, slice,
 };
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct Trailer<T> {
     ptr: *mut u8,
     size: usize,
