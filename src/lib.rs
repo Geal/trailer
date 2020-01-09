@@ -68,6 +68,10 @@ impl<T> Trailer<T> {
             )
         }
     }
+
+    pub fn capacity(&self) -> usize {
+      self.size - mem::size_of::<T>()
+    }
 }
 
 impl<T> Drop for Trailer<T> {
